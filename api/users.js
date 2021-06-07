@@ -143,6 +143,5 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   profile
 );
-// router.get('/all-users', fetchUsers);
 
 module.exports = router;

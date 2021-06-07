@@ -1,5 +1,4 @@
 require("dotenv").config();
-const e = require("cors");
 const mongoose = require("mongoose");
 
 mongoose.connect(process.env.MONGO_URI, {
@@ -11,19 +10,21 @@ mongoose.connect(process.env.MONGO_URI, {
 
 const db = mongoose.connection;
 
-//set up event for db to print connection
+// Set up event for db to print connection
 db.once("open", () => {
-  console.log(`Connected to mongoDB at ${db.host}:${db.port}`);
+  console.log(`Connect to MongoDB at ${db.host}:${db.port}`);
 });
 
 db.on("error", (error) => {
   console.log(`Database error`, error);
 });
 
-//import all models here
+// Import all of your models
 const User = require("./User");
+const Book = require("./Book");
 
-//export models here
+// export all the models from this file
 module.exports = {
   User,
+  Book,
 };
