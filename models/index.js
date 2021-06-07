@@ -24,5 +24,5 @@ const user = require("./User");
 
 //export models here
 module.exports = {
-  User,
+  user,
 };
