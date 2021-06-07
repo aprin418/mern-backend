@@ -9,20 +9,22 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // Models
 const { User } = require("../models");
+
 // controllers
 const test = async (req, res) => {
   res.json({ message: "User endpoint OK!" });
 };
 
 const signup = async (req, res) => {
-  console.log("________INSIDE OF SIGNUP_________");
+  console.log("--- INSIDE OF SIGNUP ---");
   console.log("req.body =>", req.body);
   const { name, email, password } = req.body;
 
   try {
-    //check if user exists by email
+    // see if a user exist in the database by email
     const user = await User.findOne({ email });
-    //return error if user already exists
+
+    // if a user exist return 400 error and message
     if (user) {
       return res.status(400).json({ message: "Email already exists" });
     } else {
@@ -32,8 +34,8 @@ const signup = async (req, res) => {
       let hash = await bcrypt.hash(password, salt);
 
       const newUser = new User({
-        name: name,
-        email: email,
+        name,
+        email,
         password: hash,
       });
 
@@ -42,11 +44,11 @@ const signup = async (req, res) => {
       res.json(savedNewUser);
     }
   } catch (error) {
-    console.log("Error inside of api/users/signup");
+    console.log("Error inside of /api/users/signup");
     console.log(error);
     return res
       .status(400)
-      .json({ message: "Error occurred. Please try again" });
+      .json({ message: "Error occurred. Please try again..." });
   }
 };
 
@@ -54,19 +56,26 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // find a user via email
     const user = await User.findOne({ email });
     console.log(user);
 
+    // if there is no user by the email
     if (!user) {
-      return res.status(400).json({ message: "User or password not found" });
+      return res
+        .status(400)
+        .json({ message: "Either email or password is incorrect." });
     } else {
+      // a user is found in the database
       let isMatch = await bcrypt.compare(password, user.password);
       console.log("password correct", isMatch);
 
       if (isMatch) {
+        // Add one to timesLoggedIn
         let logs = user.timesLoggedIn + 1;
         user.timesLoggedIn = logs;
         const savedUser = await user.save();
+        // create a token payload (object)
         const payload = {
           id: user.id,
           email: user.email,
@@ -75,6 +84,7 @@ const login = async (req, res) => {
         };
 
         try {
+          // token is generated
           let token = await jwt.sign(payload, JWT_SECRET, { expiresIn: 3600 });
           console.log("token", token);
           let legit = await jwt.verify(token, JWT_SECRET, { expiresIn: 60 });
@@ -86,10 +96,10 @@ const login = async (req, res) => {
           });
         } catch (error) {
           console.log("Error inside of isMatch conditional");
-          console.loge(error);
-          res
+          console.log(error);
+          return res
             .status(400)
-            .json({ message: "Session had ended. Please log in again" });
+            .json({ message: "Session has ended. Please log in again" });
         }
       } else {
         return res
@@ -98,25 +108,41 @@ const login = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log("Error inside of api/users/login");
+    console.log("Error inside of /api/users/login");
     console.log(error);
     return res
       .status(400)
-      .json({ message: "Either email or password is incorrect. try again" });
+      .json({
+        message: "Either email or password is incorrect. Please try again",
+      });
   }
 };
 
+const profile = async (req, res) => {
+  console.log("Inside of PROFILE route");
+  res.json({
+    id: req.user.id,
+    name: req.user.name,
+    email: req.user.email,
+  });
+};
+
 // routes
+// GET -> /api/users/test
 router.get("/test", test);
 
-// POST api/users/register (Public)
+// POST -> api/users/signup (Public)
 router.post("/signup", signup);
 
-// POST api/users/login (Public)
+// POST -> api/users/login (Public)
 router.post("/login", login);
 
-// GET api/users/current (Private)
-// router.get('/profile', passport.authenticate('jwt', { session: false }), profile);
+// GET /api/users/profile (Private)
+router.get(
+  "/profile",
+  passport.authenticate("jwt", { session: false }),
+  profile
+);
 // router.get('/all-users', fetchUsers);
 
 module.exports = router;
