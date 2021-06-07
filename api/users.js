@@ -8,7 +8,7 @@ const passport = require("passport");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Models
-
+const { User } = require("../models");
 // controllers
 const test = async (req, res) => {
   res.json({ message: "User endpoint OK!" });
